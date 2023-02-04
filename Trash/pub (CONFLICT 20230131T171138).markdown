@@ -1,0 +1,27 @@
+# pub
+
+# create network
+`docker network create my-net`
+
+## mariadb
+### create & run container
+`docker run --detach --network my-net --name pub-mariadb --env MARIADB_USER=admin --env MARIADB_PASSWORD=my_cool_secret --env MARIADB_ROOT_PASSWORD=my-secret-pw  mariadb:latest`
+
+### initialize pub db
+`docker run -it --rm --network my-net mariadb mariadb -hpub-mariadb -uroot -p`
+``
+CREATE DATABASE pub;
+CREATE USER 'pub'@'%' IDENTIFIED BY 'pub';
+GRANT ALL PRIVILEGES ON pub.* TO 'pub'@'%';
+``
+
+## pub server
+
+### build
+`docker build -t pub/server -f ./Dockerfile .`
+
+### create
+`docker create --network my-net --name pub-server pub/server`
+
+### initialize pub db
+docker run -it --rm --network my-net pub/server --dsn 'pub:pub@tcp(pub-mariadb)/pub' auto-migrate
